@@ -181,5 +181,17 @@ func (p *PanClient) AppListFiles(param *FileListParam) (*AppFileListResult, *api
 		logger.Verboseln("AppListFiles parse response failed")
 		return nil, apierror.NewApiErrorWithError(err)
 	}
+
+	if item.FolderList != nil && len(item.FolderList) > 0 {
+		for _,item := range item.FolderList {
+			item.IsFolder = true
+		}
+	}
+	if item.FileList != nil && len(item.FileList) > 0 {
+		for _,item := range item.FileList {
+			item.IsFolder = false
+		}
+	}
+
 	return item, nil
 }
