@@ -15,6 +15,8 @@ const (
 	ApiCodeUploadOffsetVerifyFailed = 14
 	// 服务器上传文件不存在
 	ApiCodeUploadFileNotFound = 15
+	// 文件已存在
+	ApiCodeFileAlreadyExisted = 16
 	// 失败
 	ApiCodeFailed ApiCode = 999
 )
