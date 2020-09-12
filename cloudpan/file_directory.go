@@ -61,36 +61,37 @@ type (
 		RecordCount uint `json:"recordCount"`
 	}
 
+	// FileEntity 文件/文件夹信息
 	FileEntity struct {
-		// CreateTime 创建时间
-		CreateTime string `json:"createTime"`
 		// FileId 文件ID
 		FileId string `json:"fileId"`
+		// ParentId 父文件ID
+		ParentId string `json:"parentId"`
 		// FileIdDigest 文件ID指纹
 		FileIdDigest string `json:"fileIdDigest"`
 		// FileName 文件名
 		FileName string `json:"fileName"`
 		// FileSize 文件大小，文件夹为0
 		FileSize int64 `json:"fileSize"`
-		// FileType 文件类型，后缀名，例如:"dmg"，没有则为空
-		FileType string `json:"fileType"`
-		// IsFolder 是否是文件夹
-		IsFolder bool `json:"isFolder"`
 		// LastOpTime 最后修改时间
 		LastOpTime string `json:"lastOpTime"`
-		// ParentId 父文件ID
-		ParentId string `json:"parentId"`
+		// CreateTime 创建时间
+		CreateTime string `json:"createTime"`
+		// FilePath 文件的完整路径
+		Path string `json:"path"`
+		// MediaType 媒体类型
+		MediaType MediaType `json:"mediaType"`
+		// IsFolder 是否是文件夹
+		IsFolder bool `json:"isFolder"`
+		// SubFileCount 文件夹子文件数量，对文件夹详情有效
+		SubFileCount uint `json:"subFileCount"`
 
+		// FileType 文件类型，后缀名，例如:"dmg"，没有则为空
+		FileType string `json:"fileType"`
 		// DownloadUrl 下载路径，只有文件才有
 		DownloadUrl string `json:"downloadUrl"`
 		// IsStarred 是否是星标文件
 		IsStarred bool `json:"isStarred"`
-		// MediaType 媒体类型
-		MediaType MediaType `json:"mediaType"`
-		// SubFileCount 文件夹子文件数量，对文件夹详情有效
-		SubFileCount uint `json:"subFileCount"`
-		// FilePath 文件的完整路径
-		Path string `json:"path"`
 	}
 
 	PathEntity struct {
