@@ -6,33 +6,26 @@ import (
 	"github.com/tickstep/cloudpan189-api/cloudpan/apierror"
 	"github.com/tickstep/cloudpan189-api/cloudpan/apiutil"
 	"github.com/tickstep/library-go/logger"
-	"net/url"
 	"strings"
 )
 
 type (
-	AppMkdirResult struct {
-		XMLName xml.Name `xml:"folder"`
-		// fileId 文件ID
-		FileId string `xml:"id"`
-		// ParentId 父文件夹ID
-		ParentId string `xml:"parentId"`
-		// FileName 名称
-		FileName string `xml:"name"`
-		// LastOpTime 最后修改时间
-		LastOpTime string `xml:"lastOpTime"`
-		// CreateDate 创建时间
-		CreateDate string `xml:"createDate"`
-		Rev string `xml:"rev"`
-		FileCata int `xml:"fileCata"`
+	AppMoveFileResult struct {
+		XMLName xml.Name `xml:"fileList"`
+		// 总数量
+		Count int `xml:"count"`
+		// 文件夹列表
+		FolderList AppFileList `xml:"folder"`
+		// 文件列表
+		FileList AppFileList `xml:"file"`
 	}
 )
 
-// AppMkdir 创建文件夹
-func (p *PanClient) AppMkdir(parentFileId, dirName string) (*AppMkdirResult, *apierror.ApiError) {
+// AppMoveFile 移动文件/文件夹
+func (p *PanClient) AppMoveFile(fileIdList []string, targetFolderId string) (*AppMoveFileResult, *apierror.ApiError) {
 	fullUrl := &strings.Builder{}
-	fmt.Fprintf(fullUrl, "%s/createFolder.action?parentFolderId=%s&folderName=%s&relativePath=&%s",
-		API_URL, parentFileId, url.QueryEscape(dirName), apiutil.PcClientInfoSuffixParam())
+	fmt.Fprintf(fullUrl, "%s/batchMoveFile.action?fileIdList=%s&destParentFolderId=%s&%s",
+		API_URL, strings.Join(fileIdList, ";"), targetFolderId, apiutil.PcClientInfoSuffixParam())
 	httpMethod := "POST"
 	dateOfGmt := apiutil.DateOfGmtStr()
 	appToken := p.appToken
@@ -45,14 +38,13 @@ func (p *PanClient) AppMkdir(parentFileId, dirName string) (*AppMkdirResult, *ap
 	logger.Verboseln("do request url: " + fullUrl.String())
 	respBody, err1 := p.client.Fetch(httpMethod, fullUrl.String(), nil, headers)
 	if err1 != nil {
-		logger.Verboseln("AppMkdir occurs error: ", err1.Error())
+		logger.Verboseln("AppMoveFile occurs error: ", err1.Error())
 		return nil, apierror.NewApiErrorWithError(err1)
 	}
-	item := &AppMkdirResult{}
+	item := &AppMoveFileResult{}
 	if err := xml.Unmarshal(respBody, item); err != nil {
-		logger.Verboseln("AppMkdir parse response failed")
+		logger.Verboseln("AppMoveFile parse response failed")
 		return nil, apierror.NewApiErrorWithError(err)
 	}
 	return item, nil
 }
-

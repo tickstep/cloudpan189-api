@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// AppDeleteFile 删除文件/文件夹
 func (p *PanClient) AppDeleteFile(fileIdList []string) (bool, *apierror.ApiError) {
 	fullUrl := &strings.Builder{}
 	fmt.Fprintf(fullUrl, "%s/batchDeleteFile.action?fileIdList=%s&%s",
@@ -24,7 +25,7 @@ func (p *PanClient) AppDeleteFile(fileIdList []string) (bool, *apierror.ApiError
 	logger.Verboseln("do request url: " + fullUrl.String())
 	_, err1 := p.client.Fetch(httpMethod, fullUrl.String(), nil, headers)
 	if err1 != nil {
-		logger.Verboseln("AppMkdir occurs error: ", err1.Error())
+		logger.Verboseln("AppDeleteFile occurs error: ", err1.Error())
 		return false, apierror.NewApiErrorWithError(err1)
 	}
 	return true, nil

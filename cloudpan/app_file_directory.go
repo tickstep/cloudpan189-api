@@ -114,7 +114,7 @@ func (p *PanClient) AppGetBasicFileInfo(param *AppGetFileInfoParam) (*AppGetFile
 	logger.Verboseln("do request url: " + fullUrl.String())
 	respBody, err1 := p.client.Fetch(httpMethod, fullUrl.String(), nil, headers)
 	if err1 != nil {
-		logger.Verboseln("AppGetFileInfo occurs error: ", err1.Error())
+		logger.Verboseln("AppGetBasicFileInfo occurs error: ", err1.Error())
 		return nil, apierror.NewApiErrorWithError(err1)
 	}
 	er := &apierror.AppErrorXmlResp{}
@@ -127,7 +127,7 @@ func (p *PanClient) AppGetBasicFileInfo(param *AppGetFileInfoParam) (*AppGetFile
 	}
 	item := &AppGetFileInfoResult{}
 	if err := xml.Unmarshal(respBody, item); err != nil {
-		logger.Verboseln("AppGetFileInfo parse response failed")
+		logger.Verboseln("AppGetBasicFileInfo parse response failed")
 		return nil, apierror.NewApiErrorWithError(err)
 	}
 	return item, nil
@@ -146,6 +146,7 @@ func getAppOrderBy(by OrderBy) AppOrderBy {
 	}
 }
 
+// AppListFiles 获取文件列表
 func (p *PanClient) AppListFiles(param *FileListParam) (*AppFileListResult, *apierror.ApiError) {
 	fullUrl := &strings.Builder{}
 	fmt.Fprintf(fullUrl, "%s/listFiles.action?folderId=%s&recursive=0&fileType=0&iconOption=0&mediaAttr=0&orderBy=%s&descending=%t&pageNum=%d&pageSize=%d&%s",
