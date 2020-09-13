@@ -16,6 +16,7 @@ type (
 	UploadFunc func(httpMethod, fullUrl string, headers map[string]string) (resp *http.Response, err error)
 
 	AppCreateUploadFileParam struct {
+		FamilyId int64
 		// ParentFolderId 存储云盘的目录ID
 		ParentFolderId string
 		// FileName 存储云盘的文件名

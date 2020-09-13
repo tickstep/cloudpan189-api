@@ -100,7 +100,12 @@ func SignatureOfMd5(params map[string]string) string {
 
 // SignatureOfHmac HMAC签名
 func SignatureOfHmac(secretKey, sessionKey, operate, url, dateOfGmt string) string {
-	requestUri := strings.ReplaceAll(strings.Split(url, "?")[0], "https://api.cloud.189.cn", "")
+	requestUri := strings.Split(url, "?")[0]
+	requestUri = strings.ReplaceAll(requestUri, "https://", "")
+	requestUri = strings.ReplaceAll(requestUri, "http://", "")
+	idx := strings.Index(requestUri, "/")
+	requestUri = requestUri[idx:]
+
 	plainStr := &strings.Builder{}
 	fmt.Fprintf(plainStr, "SessionKey=%s&Operate=%s&RequestURI=%s&Date=%s",
 		sessionKey, operate, requestUri, dateOfGmt)
