@@ -29,19 +29,33 @@ type (
 )
 
 // AppMkdir 创建文件夹
-func (p *PanClient) AppMkdir(parentFileId, dirName string) (*AppMkdirResult, *apierror.ApiError) {
+func (p *PanClient) AppMkdir(familyId int64, parentFileId, dirName string) (*AppMkdirResult, *apierror.ApiError) {
 	fullUrl := &strings.Builder{}
-	fmt.Fprintf(fullUrl, "%s/createFolder.action?parentFolderId=%s&folderName=%s&relativePath=&%s",
-		API_URL, parentFileId, url.QueryEscape(dirName), apiutil.PcClientInfoSuffixParam())
+
+	sessionKey := ""
+	sessionSecret := ""
+	if familyId <= 0 {
+		// 个人云
+		fmt.Fprintf(fullUrl, "%s/createFolder.action?parentFolderId=%s&folderName=%s&relativePath=&%s",
+			API_URL, parentFileId, url.QueryEscape(dirName), apiutil.PcClientInfoSuffixParam())
+		sessionKey = p.appToken.SessionKey
+		sessionSecret = p.appToken.SessionSecret
+	} else {
+		// 家庭云
+		fmt.Fprintf(fullUrl, "%s/family/file/createFolder.action?familyId=%d&parentId=%s&folderName=%s&relativePath=&%s",
+			API_URL, familyId, parentFileId, url.QueryEscape(dirName), apiutil.PcClientInfoSuffixParam())
+		sessionKey = p.appToken.FamilySessionKey
+		sessionSecret = p.appToken.FamilySessionSecret
+	}
 	httpMethod := "POST"
 	dateOfGmt := apiutil.DateOfGmtStr()
-	appToken := p.appToken
 	headers := map[string]string {
 		"Date": dateOfGmt,
-		"SessionKey": appToken.SessionKey,
-		"Signature": apiutil.SignatureOfHmac(appToken.SessionSecret, appToken.SessionKey, httpMethod, fullUrl.String(), dateOfGmt),
+		"SessionKey": sessionKey,
+		"Signature": apiutil.SignatureOfHmac(sessionSecret, sessionKey, httpMethod, fullUrl.String(), dateOfGmt),
 		"X-Request-ID": apiutil.XRequestId(),
 	}
+
 	logger.Verboseln("do request url: " + fullUrl.String())
 	respBody, err1 := p.client.Fetch(httpMethod, fullUrl.String(), nil, headers)
 	if err1 != nil {

@@ -13,6 +13,8 @@ import (
 type (
 	// AppGetFileInfoParam 获取文件信息参数
 	AppGetFileInfoParam struct {
+		// 家庭云ID
+		FamilyId int64
 		// FileId 文件ID，支持文件和文件夹
 		FileId   string
 		// FilePath 文件绝对路径，支持文件和文件夹
@@ -21,7 +23,7 @@ type (
 
 	// AppGetFileInfoResult 文件信息响应值
 	AppGetFileInfoResult struct {
-		XMLName xml.Name `xml:"folderInfo"`
+		//XMLName xml.Name `xml:"folderInfo"`
 		FileId string `xml:"id"`
 		ParentId string `xml:"parentFolderId"`
 		FileName string `xml:"name"`
@@ -100,36 +102,81 @@ const (
 // AppGetBasicFileInfo 根据文件ID或者文件绝对路径获取文件信息，支持文件和文件夹
 func (p *PanClient) AppGetBasicFileInfo(param *AppGetFileInfoParam) (*AppGetFileInfoResult, *apierror.ApiError) {
 	fullUrl := &strings.Builder{}
-	fmt.Fprintf(fullUrl, "%s/getFolderInfo.action?folderId=%s&folderPath=%s&pathList=1&dt=3&%s",
-		API_URL, param.FileId, url.QueryEscape(param.FilePath), apiutil.PcClientInfoSuffixParam())
+
+	sessionKey := ""
+	sessionSecret := ""
+	if param.FamilyId <= 0 {
+		// 个人云
+		fmt.Fprintf(fullUrl, "%s/getFolderInfo.action?folderId=%s&folderPath=%s&pathList=0&dt=3&%s",
+			API_URL, param.FileId, url.QueryEscape(param.FilePath), apiutil.PcClientInfoSuffixParam())
+		sessionKey = p.appToken.SessionKey
+		sessionSecret = p.appToken.SessionSecret
+	} else {
+		// 家庭云
+		if param.FileId == "" {
+			return nil, apierror.NewFailedApiError("FileId为空")
+		}
+		fmt.Fprintf(fullUrl, "%s/family/file/getFolderInfo.action?familyId=%d&folderId=%s&folderPath=%s&pathList=0&%s",
+			API_URL, param.FamilyId, param.FileId, url.QueryEscape(param.FilePath), apiutil.PcClientInfoSuffixParam())
+		sessionKey = p.appToken.FamilySessionKey
+		sessionSecret = p.appToken.FamilySessionSecret
+	}
 	httpMethod := "GET"
 	dateOfGmt := apiutil.DateOfGmtStr()
-	appToken := p.appToken
 	headers := map[string]string {
 		"Date": dateOfGmt,
-		"SessionKey": appToken.SessionKey,
-		"Signature": apiutil.SignatureOfHmac(appToken.SessionSecret, appToken.SessionKey, httpMethod, fullUrl.String(), dateOfGmt),
+		"SessionKey": sessionKey,
+		"Signature": apiutil.SignatureOfHmac(sessionSecret, sessionKey, httpMethod, fullUrl.String(), dateOfGmt),
 		"X-Request-ID": apiutil.XRequestId(),
 	}
+
 	logger.Verboseln("do request url: " + fullUrl.String())
 	respBody, err1 := p.client.Fetch(httpMethod, fullUrl.String(), nil, headers)
 	if err1 != nil {
 		logger.Verboseln("AppGetBasicFileInfo occurs error: ", err1.Error())
 		return nil, apierror.NewApiErrorWithError(err1)
 	}
+	logger.Verboseln("response: " + string(respBody))
 	er := &apierror.AppErrorXmlResp{}
 	if err := xml.Unmarshal(respBody, er); err == nil {
 		if er.Code != "" {
 			if er.Code == "FileNotFound" {
 				return nil, apierror.NewApiError(apierror.ApiCodeFileNotFoundCode, "文件不存在")
 			}
+			return nil, apierror.NewFailedApiError("请求出错")
 		}
 	}
 	item := &AppGetFileInfoResult{}
-	if err := xml.Unmarshal(respBody, item); err != nil {
-		logger.Verboseln("AppGetBasicFileInfo parse response failed")
-		return nil, apierror.NewApiErrorWithError(err)
+	if param.FamilyId <= 0 {
+		if err := xml.Unmarshal(respBody, item); err != nil {
+			logger.Verboseln("AppGetBasicFileInfo parse response failed")
+			return nil, apierror.NewApiErrorWithError(err)
+		}
+	} else {
+		type familyAppGetFileInfoResult struct {
+			FileId string `xml:"id"`
+			ParentId string `xml:"parentId"`
+			FileName string `xml:"name"`
+			CreateDate string `xml:"createDate"`
+			LastOpTime string `xml:"lastOpTime"`
+			Path string `xml:"path"`
+			Rev string `xml:"rev"`
+		}
+		fitem := &familyAppGetFileInfoResult{}
+		if err := xml.Unmarshal(respBody, fitem); err != nil {
+			logger.Verboseln("AppGetBasicFileInfo parse response failed")
+			return nil, apierror.NewApiErrorWithError(err)
+		}
+		item = &AppGetFileInfoResult{
+			FileId: fitem.FileId,
+			ParentId: fitem.ParentId,
+			FileName: fitem.FileName,
+			CreateDate: fitem.CreateDate,
+			LastOpTime: fitem.LastOpTime,
+			Rev: fitem.Rev,
+		}
 	}
+
 	return item, nil
 }
 
@@ -149,19 +196,35 @@ func getAppOrderBy(by OrderBy) AppOrderBy {
 // AppListFiles 获取文件列表
 func (p *PanClient) AppListFiles(param *FileListParam) (*AppFileListResult, *apierror.ApiError) {
 	fullUrl := &strings.Builder{}
-	fmt.Fprintf(fullUrl, "%s/listFiles.action?folderId=%s&recursive=0&fileType=0&iconOption=0&mediaAttr=0&orderBy=%s&descending=%t&pageNum=%d&pageSize=%d&%s",
-		API_URL,
-		param.FileId, getAppOrderBy(param.OrderBy), param.OrderSort == OrderDesc, param.PageNum, param.PageSize,
-		apiutil.PcClientInfoSuffixParam())
+
+	sessionKey := ""
+	sessionSecret := ""
+	if param.FamilyId <= 0 {
+		// 个人云
+		fmt.Fprintf(fullUrl, "%s/listFiles.action?folderId=%s&recursive=0&fileType=0&iconOption=0&mediaAttr=0&orderBy=%s&descending=%t&pageNum=%d&pageSize=%d&%s",
+			API_URL,
+			param.FileId, getAppOrderBy(param.OrderBy), param.OrderSort == OrderDesc, param.PageNum, param.PageSize,
+			apiutil.PcClientInfoSuffixParam())
+		sessionKey = p.appToken.SessionKey
+		sessionSecret = p.appToken.SessionSecret
+	} else {
+		// 家庭云
+		fmt.Fprintf(fullUrl, "%s/family/file/listFiles.action?folderId=%s&familyId=%d&fileType=0&iconOption=0&mediaAttr=0&orderBy=%d&descending=%t&pageNum=%d&pageSize=%d&%s",
+			API_URL,
+			param.FileId, param.FamilyId, param.OrderBy, param.OrderSort == OrderDesc, param.PageNum, param.PageSize,
+			apiutil.PcClientInfoSuffixParam())
+		sessionKey = p.appToken.FamilySessionKey
+		sessionSecret = p.appToken.FamilySessionSecret
+	}
 	httpMethod := "GET"
 	dateOfGmt := apiutil.DateOfGmtStr()
-	appToken := p.appToken
 	headers := map[string]string {
 		"Date": dateOfGmt,
-		"SessionKey": appToken.SessionKey,
-		"Signature": apiutil.SignatureOfHmac(appToken.SessionSecret, appToken.SessionKey, httpMethod, fullUrl.String(), dateOfGmt),
+		"SessionKey": sessionKey,
+		"Signature": apiutil.SignatureOfHmac(sessionSecret, sessionKey, httpMethod, fullUrl.String(), dateOfGmt),
 		"X-Request-ID": apiutil.XRequestId(),
 	}
+
 	logger.Verboseln("do request url: " + fullUrl.String())
 	respBody, err1 := p.client.Fetch(httpMethod, fullUrl.String(), nil, headers)
 	if err1 != nil {

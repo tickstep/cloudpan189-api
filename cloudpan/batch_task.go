@@ -34,14 +34,14 @@ type (
 
     // CheckTaskResult 检查任务结果
 	CheckTaskResult struct {
-		FailedCount int `json:"failedCount"`
-		SkipCount int `json:"skipCount"`
-		SubTaskCount int `json:"subTaskCount"`
-		SuccessedCount int `json:"successedCount"`
-		SuccessedFileIdList []int64 `json:"successedFileIdList"`
-		TaskId string `json:"taskId"`
+		FailedCount int `json:"failedCount" xml:"failedCount"`
+		SkipCount int `json:"skipCount" xml:"skipCount"`
+		SubTaskCount int `json:"subTaskCount" xml:"subTaskCount"`
+		SuccessedCount int `json:"successedCount" xml:"successedCount"`
+		SuccessedFileIdList []int64 `json:"successedFileIdList" xml:"successedFileIdList"`
+		TaskId string `json:"taskId" xml:"taskId"`
 		// TaskStatus 任务状态， 4-成功
-		TaskStatus BatchTaskStatus `json:"taskStatus"`
+		TaskStatus BatchTaskStatus `json:"taskStatus" xml:"taskStatus"`
 	}
 
 	BatchTaskStatus int
