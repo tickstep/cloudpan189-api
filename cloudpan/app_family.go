@@ -23,7 +23,7 @@ type (
 
 	AppFamilyInfoListResult struct {
 		XMLName xml.Name `xml:"familyListResponse"`
-		FamilyInfoList []AppFamilyInfo `xml:"familyInfo" json:"familyInfoList"`
+		FamilyInfoList []*AppFamilyInfo `xml:"familyInfo" json:"familyInfoList"`
 	}
 
 )
