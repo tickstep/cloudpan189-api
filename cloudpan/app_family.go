@@ -12,24 +12,24 @@ import (
 type (
 	// AppGetFileInfoParam 获取文件信息参数
 	AppFamilyInfo struct {
-		Count int `xml:"count"`
-		Type int `xml:"type"`
-		UserRole int `xml:"userRole"`
-		CreateTime string `xml:"createTime"`
-		FamilyId int64 `xml:"familyId"`
-		RemarkName string `xml:"remarkName"`
-		UseFlag int `xml:"useFlag"`
+		Count int `xml:"count" xml:"count"`
+		Type int `xml:"type" json:"type"`
+		UserRole int `xml:"userRole" json:"userRole"`
+		CreateTime string `xml:"createTime" json:"createTime"`
+		FamilyId int64 `xml:"familyId" json:"familyId"`
+		RemarkName string `xml:"remarkName" json:"remarkName"`
+		UseFlag int `xml:"useFlag" json:"useFlag"`
 	}
 
 	AppFamilyInfoListResult struct {
 		XMLName xml.Name `xml:"familyListResponse"`
-		FamilyInfoList []AppFamilyInfo `xml:"familyInfo"`
+		FamilyInfoList []AppFamilyInfo `xml:"familyInfo" json:"familyInfoList"`
 	}
 
 )
 
 // AppGetFamilyList 获取用户的家庭列表
-func (p *PanClient) AppGetFamilyList() (*AppFamilyInfoListResult, *apierror.ApiError) {
+func (p *PanClient) AppFamilyGetFamilyList() (*AppFamilyInfoListResult, *apierror.ApiError) {
 	fullUrl := &strings.Builder{}
 	fmt.Fprintf(fullUrl, "%s/family/manage/getFamilyList.action?%s",
 		API_URL, apiutil.PcClientInfoSuffixParam())

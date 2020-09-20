@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/tickstep/cloudpan189-api/cloudpan"
 	"github.com/tickstep/library-go/jsonhelper"
 	"os"
@@ -13,6 +14,11 @@ type (
 		Password string `json:"password"`
 	}
 )
+
+func objToJsonStr(v interface{}) string {
+	r,_ := jsoniter.MarshalToString(v)
+	return string(r)
+}
 
 func main() {
 	configFile, err := os.OpenFile("userpw.txt", os.O_CREATE|os.O_RDWR, 0600)
@@ -53,4 +59,12 @@ func main() {
 		return
 	}
 	fmt.Printf("name = %s, size = %d, path = %s", fi.FileName, fi.FileSize, fi.Path)
+
+	// get family cloud list
+	ffl, err2 := panClient.AppFamilyGetFamilyList()
+	if err2 != nil {
+		fmt.Println("get family list error: " + err2.Error())
+		return
+	}
+	fmt.Println(objToJsonStr(ffl))
 }
