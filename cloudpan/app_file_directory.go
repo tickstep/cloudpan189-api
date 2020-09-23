@@ -44,6 +44,22 @@ type (
 
 	AppOrderBy string
 
+	// FileListParam 文件列表参数
+	AppFileListParam struct {
+		// 家庭云ID
+		FamilyId int64
+		// FileId 文件ID
+		FileId string
+		// OrderBy 排序字段
+		OrderBy OrderBy
+		// OrderSort 排序顺序
+		OrderSort OrderSort
+		// PageNum 页数量，从1开始
+		PageNum uint
+		// PageSize 页大小，默认60
+		PageSize uint
+	}
+
 	// AppFileListResult 文件列表响应值
 	AppFileListResult struct {
 		XMLName xml.Name `xml:"listFiles"`
@@ -193,8 +209,19 @@ func getAppOrderBy(by OrderBy) AppOrderBy {
 	}
 }
 
-// AppListFiles 获取文件列表
-func (p *PanClient) AppListFiles(param *FileListParam) (*AppFileListResult, *apierror.ApiError) {
+func NewAppFileListParam() *AppFileListParam {
+	return &AppFileListParam {
+		FamilyId: 0,
+		FileId: "-11",
+		OrderBy: OrderByName,
+		OrderSort: OrderAsc,
+		PageNum: 1,
+		PageSize: 200,
+	}
+}
+
+// AppFileList 获取文件列表
+func (p *PanClient) AppFileList(param *AppFileListParam) (*AppFileListResult, *apierror.ApiError) {
 	fullUrl := &strings.Builder{}
 
 	sessionKey := ""
@@ -228,7 +255,7 @@ func (p *PanClient) AppListFiles(param *FileListParam) (*AppFileListResult, *api
 	logger.Verboseln("do request url: " + fullUrl.String())
 	respBody, err1 := p.client.Fetch(httpMethod, fullUrl.String(), nil, headers)
 	if err1 != nil {
-		logger.Verboseln("AppListFiles occurs error: ", err1.Error())
+		logger.Verboseln("AppFileList occurs error: ", err1.Error())
 		return nil, apierror.NewApiErrorWithError(err1)
 	}
 	logger.Verboseln("response: " + string(respBody))
@@ -242,7 +269,7 @@ func (p *PanClient) AppListFiles(param *FileListParam) (*AppFileListResult, *api
 	}
 	item := &AppFileListResult{}
 	if err := xml.Unmarshal(respBody, item); err != nil {
-		logger.Verboseln("AppListFiles parse response failed")
+		logger.Verboseln("AppFileList parse response failed")
 		return nil, apierror.NewApiErrorWithError(err)
 	}
 

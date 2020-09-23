@@ -20,8 +20,6 @@ type (
 
 	// FileListParam 文件列表参数
 	FileListParam struct {
-		// 家庭云ID
-		FamilyId int64
 		// FileId 文件ID
 		FileId string
 		// MediaType 媒体文件过滤
