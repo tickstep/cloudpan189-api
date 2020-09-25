@@ -212,6 +212,22 @@ func (f *FileEntity) String() string {
 	return builder.String()
 }
 
+func (f *FileEntity) CreateFileEntity() *AppFileEntity {
+	return &AppFileEntity{
+		FileId: f.FileId,
+		ParentId: f.ParentId,
+		FileMd5: f.FileIdDigest,
+		FileName: f.FileName,
+		FileSize: f.FileSize,
+		LastOpTime: f.LastOpTime,
+		CreateTime: f.CreateTime,
+		Path: f.Path,
+		MediaType: f.MediaType,
+		IsFolder: f.IsFolder,
+		SubFileCount: f.SubFileCount,
+	}
+}
+
 func (p *PanClient) FileList(param *FileListParam) (result *FileSearchResult, error *apierror.ApiError) {
 	fsp := NewFileSearchParam()
 	fsp.FileId = param.FileId

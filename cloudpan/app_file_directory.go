@@ -85,8 +85,8 @@ type (
 		FileSize int64 `xml:"size"`
 		// LastOpTime 最后修改时间
 		LastOpTime string `xml:"lastOpTime"`
-		// CreateDate 创建时间
-		CreateDate string `xml:"createDate"`
+		// CreateTime 创建时间
+		CreateTime string `xml:"createDate"`
 		// 文件完整路径
 		Path string `xml:"path"`
 		// MediaType 媒体类型
@@ -270,6 +270,22 @@ func (f *AppFileEntity) String() string {
 	}
 	builder.WriteString("文件路径: " + f.Path + "\n")
 	return builder.String()
+}
+
+func (f *AppFileEntity) CreateFileEntity() *FileEntity {
+	return &FileEntity{
+		FileId: f.FileId,
+		ParentId: f.ParentId,
+		FileIdDigest: f.FileMd5,
+		FileName: f.FileName,
+		FileSize: f.FileSize,
+		LastOpTime: f.LastOpTime,
+		CreateTime: f.CreateTime,
+		Path: f.Path,
+		MediaType: f.MediaType,
+		IsFolder: f.IsFolder,
+		SubFileCount: f.SubFileCount,
+	}
 }
 
 // AppGetAllFileList 获取指定目录下的所有文件列表

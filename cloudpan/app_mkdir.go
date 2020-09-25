@@ -21,10 +21,10 @@ type (
 		FileName string `xml:"name"`
 		// LastOpTime 最后修改时间
 		LastOpTime string `xml:"lastOpTime"`
-		// CreateDate 创建时间
-		CreateDate string `xml:"createDate"`
-		Rev string `xml:"rev"`
-		FileCata int `xml:"fileCata"`
+		// CreateTime 创建时间
+		CreateTime string `xml:"createDate"`
+		Rev        string `xml:"rev"`
+		FileCata   int    `xml:"fileCata"`
 	}
 )
 
