@@ -224,7 +224,7 @@ func NewAppFileEntityForRootDir() *AppFileEntity {
 		FileId: "-11",
 		IsFolder: true,
 		FileName: "/",
-		ParentId: "-11",
+		ParentId: "",
 	}
 }
 

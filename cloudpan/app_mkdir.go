@@ -12,7 +12,7 @@ import (
 
 type (
 	AppMkdirResult struct {
-		XMLName xml.Name `xml:"folder"`
+		//XMLName xml.Name `xml:"folder"`
 		// fileId 文件ID
 		FileId string `xml:"id"`
 		// ParentId 父文件夹ID
@@ -68,5 +68,64 @@ func (p *PanClient) AppMkdir(familyId int64, parentFileId, dirName string) (*App
 		return nil, apierror.NewApiErrorWithError(err)
 	}
 	return item, nil
+}
+
+
+func (p *PanClient) AppMkdirRecursive(familyId int64, parentFileId string, fullPath string, index int, pathSlice []string) (*AppMkdirResult, *apierror.ApiError) {
+	r := &AppMkdirResult{}
+	if familyId == 0 {
+		if parentFileId == "" {
+			// default root "/" entity
+			parentFileId = NewAppFileEntityForRootDir().FileId
+			if index == 0 && len(pathSlice) == 1 {
+				// root path "/"
+				r.FileId = parentFileId
+				return r, nil
+			}
+
+			fullPath = ""
+			return p.AppMkdirRecursive(familyId, parentFileId, fullPath, index + 1, pathSlice)
+		}
+	}
+
+	if index >= len(pathSlice) {
+		r.FileId = parentFileId
+		return r, nil
+	}
+
+	listFilePath := NewAppFileListParam()
+	listFilePath.FileId = parentFileId
+	listFilePath.FamilyId = familyId
+	fileResult, err := p.AppGetAllFileList(listFilePath)
+	if err != nil {
+		r.FileId = ""
+		return r, err
+	}
+
+	// existed?
+	for _, fileEntity := range fileResult.FileList {
+		if fileEntity.FileName == pathSlice[index] {
+			return p.AppMkdirRecursive(familyId, fileEntity.FileId, fullPath + "/" + pathSlice[index], index + 1, pathSlice)
+		}
+	}
+
+	// not existed, mkdir dir
+	name := pathSlice[index]
+	if !apiutil.CheckFileNameValid(name) {
+		r.FileId = ""
+		return r, apierror.NewFailedApiError("文件夹名不能包含特殊字符：" + apiutil.FileNameSpecialChars)
+	}
+
+	rs, err := p.AppMkdir(familyId, parentFileId, name)
+	if err != nil {
+		r.FileId = ""
+		return r, err
+	}
+
+	if (index+1) >= len(pathSlice) {
+		return rs, nil
+	} else {
+		return p.AppMkdirRecursive(familyId, rs.FileId, fullPath + "/" + pathSlice[index], index + 1, pathSlice)
+	}
 }
 
