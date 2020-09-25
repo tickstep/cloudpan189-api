@@ -13,6 +13,9 @@ import (
 )
 
 type (
+	// HandleFileDirectoryFunc 处理文件或目录的元信息, 返回值控制是否退出递归
+	HandleAppFileDirectoryFunc func(depth int, fdPath string, fd *AppFileEntity, apierr *apierror.ApiError) bool
+
 	// AppGetFileInfoParam 获取文件信息参数
 	AppGetFileInfoParam struct {
 		// 家庭云ID
@@ -301,6 +304,11 @@ func (p *PanClient) AppGetAllFileList(param *AppFileListParam) (*AppFileListResu
 	if internalParam.PageSize <= 0 {
 		internalParam.PageSize = 200
 	}
+	if internalParam.FamilyId > 0 {
+		if internalParam.FileId == "-11" {
+			internalParam.FileId = ""
+		}
+	}
 
 	result := &AppFileListResult{}
 	fileResult, err := p.AppFileList(internalParam)
@@ -318,7 +326,7 @@ func (p *PanClient) AppGetAllFileList(param *AppFileListParam) (*AppFileListResu
 			internalParam.PageNum = uint(page)
 			fileResult, err = p.AppFileList(internalParam)
 			if err != nil {
-				fmt.Println(err)
+				logger.Verboseln(err)
 				break
 			}
 			result.FileList = append(result.FileList, fileResult.FileList...)
@@ -549,4 +557,58 @@ func getPath(index int, pathSlice *[]string) string {
 		fullPath += "/" + str
 	}
 	return strings.ReplaceAll(fullPath, "//", "/")
+}
+
+
+
+// FilesDirectoriesRecurseList 递归获取目录下的文件和目录列表
+func (p *PanClient) AppFilesDirectoriesRecurseList(familyId int64, path string, handleAppFileDirectoryFunc HandleAppFileDirectoryFunc) AppFileList {
+	targetFileInfo, er := p.AppFileInfoByPath(familyId, path)
+	if er != nil {
+		if handleAppFileDirectoryFunc != nil {
+			handleAppFileDirectoryFunc(0, path, nil, er)
+		}
+		return nil
+	}
+	if !targetFileInfo.IsFolder {
+		if handleAppFileDirectoryFunc != nil {
+			handleAppFileDirectoryFunc(0, path, targetFileInfo, nil)
+		}
+		return AppFileList{targetFileInfo}
+	}
+
+	fld := &AppFileList{}
+	ok := p.appRecurseList(familyId, targetFileInfo, 1, handleAppFileDirectoryFunc, fld)
+	if !ok {
+		return nil
+	}
+	return *fld
+}
+
+func (p *PanClient) appRecurseList(familyId int64, folderInfo *AppFileEntity, depth int, handleAppFileDirectoryFunc HandleAppFileDirectoryFunc, fld *AppFileList) bool {
+	flp := NewAppFileListParam()
+	flp.FileId = folderInfo.FileId
+	flp.FamilyId = familyId
+	r, apiError := p.AppGetAllFileList(flp)
+	if apiError != nil {
+		if handleAppFileDirectoryFunc != nil {
+			handleAppFileDirectoryFunc(depth, folderInfo.Path, nil, apiError) // 传递错误
+		}
+		return false
+	}
+	ok := true
+	for _, fi := range r.FileList {
+		*fld = append(*fld, fi)
+		if fi.IsFolder {
+			ok = p.appRecurseList(familyId, fi, depth+1, handleAppFileDirectoryFunc, fld)
+		} else {
+			if handleAppFileDirectoryFunc != nil {
+				ok = handleAppFileDirectoryFunc(depth, fi.Path, fi, nil)
+			}
+		}
+		if !ok {
+			return false
+		}
+	}
+	return true
 }
