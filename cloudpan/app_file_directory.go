@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 )
 
 type (
@@ -63,6 +64,9 @@ type (
 		PageNum uint
 		// PageSize 页大小，默认60
 		PageSize uint
+
+		// 默认是不返回Path路径，是否构建
+		ConstructPath bool
 	}
 
 	// AppFileListResult 文件列表响应值
@@ -333,6 +337,22 @@ func (p *PanClient) AppGetAllFileList(param *AppFileListParam) (*AppFileListResu
 		}
 	}
 
+	// parentId
+	for _,fi := range result.FileList {
+		fi.ParentId = param.FileId
+	}
+
+	// construct path
+	if param.ConstructPath {
+		parentFullPath,err := p.AppFilePathById(param.FamilyId, param.FileId)
+		if err == nil {
+			for _,fi := range result.FileList {
+				fi.Path = parentFullPath + "/" + fi.FileName
+				fi.ParentId = param.FileId
+			}
+		}
+	}
+
 	return result, nil
 }
 
@@ -459,6 +479,7 @@ func (p *PanClient) AppFilePathById(familyId int64, fileId string) (string, *api
 
 		// next loop
 		param.FileId = fi.ParentId
+		time.Sleep(100 * time.Millisecond)
 	}
 	return fullPath, nil
 }
@@ -589,6 +610,7 @@ func (p *PanClient) appRecurseList(familyId int64, folderInfo *AppFileEntity, de
 	flp := NewAppFileListParam()
 	flp.FileId = folderInfo.FileId
 	flp.FamilyId = familyId
+	flp.ConstructPath = true
 	r, apiError := p.AppGetAllFileList(flp)
 	if apiError != nil {
 		if handleAppFileDirectoryFunc != nil {
@@ -600,6 +622,7 @@ func (p *PanClient) appRecurseList(familyId int64, folderInfo *AppFileEntity, de
 	for _, fi := range r.FileList {
 		*fld = append(*fld, fi)
 		if fi.IsFolder {
+			time.Sleep(200 * time.Millisecond)
 			ok = p.appRecurseList(familyId, fi, depth+1, handleAppFileDirectoryFunc, fld)
 		} else {
 			if handleAppFileDirectoryFunc != nil {
