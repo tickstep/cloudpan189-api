@@ -479,7 +479,7 @@ func (p *PanClient) AppFilePathById(familyId int64, fileId string) (string, *api
 
 		// next loop
 		param.FileId = fi.ParentId
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(time.Duration(100) * time.Millisecond)
 	}
 	return fullPath, nil
 }
@@ -622,7 +622,7 @@ func (p *PanClient) appRecurseList(familyId int64, folderInfo *AppFileEntity, de
 	for _, fi := range r.FileList {
 		*fld = append(*fld, fi)
 		if fi.IsFolder {
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(time.Duration(200) * time.Millisecond)
 			ok = p.appRecurseList(familyId, fi, depth+1, handleAppFileDirectoryFunc, fld)
 		} else {
 			if handleAppFileDirectoryFunc != nil {
