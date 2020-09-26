@@ -116,6 +116,11 @@ func (p *PanClient) AppMkdirRecursive(familyId int64, parentFileId string, fullP
 		return r, apierror.NewFailedApiError("文件夹名不能包含特殊字符：" + apiutil.FileNameSpecialChars)
 	}
 
+	if familyId > 0 {
+		if parentFileId == "-11" {
+			parentFileId = ""
+		}
+	}
 	rs, err := p.AppMkdir(familyId, parentFileId, name)
 	if err != nil {
 		r.FileId = ""
