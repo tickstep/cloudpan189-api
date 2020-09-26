@@ -364,7 +364,7 @@ func (p *PanClient) AppFileList(param *AppFileListParam) (*AppFileListResult, *a
 	sessionSecret := ""
 	if param.FamilyId <= 0 {
 		// 个人云
-		fmt.Fprintf(fullUrl, "%s/listFiles.action?folderId=%s&recursive=0&fileType=0&iconOption=0&mediaAttr=0&orderBy=%s&descending=%t&pageNum=%d&pageSize=%d&%s",
+		fmt.Fprintf(fullUrl, "%s/listFiles.action?folderId=%s&recursive=0&fileType=0&iconOption=10&mediaAttr=0&orderBy=%s&descending=%t&pageNum=%d&pageSize=%d&%s",
 			API_URL,
 			param.FileId, getAppOrderBy(param.OrderBy), param.OrderSort == OrderDesc, param.PageNum, param.PageSize,
 			apiutil.PcClientInfoSuffixParam())
