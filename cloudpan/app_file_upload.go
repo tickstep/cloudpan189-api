@@ -182,6 +182,7 @@ func (p *PanClient) AppUploadFileCommit(uploadCommitUrl, uploadFileId, xRequestI
 		logger.Verboseln("AppUploadFileData occurs error: ", err1.Error())
 		return nil, apierror.NewApiErrorWithError(err1)
 	}
+	logger.Verboseln("response: " + string(respBody))
 	er := &apierror.AppErrorXmlResp{}
 	if err := xml.Unmarshal(respBody, er); err == nil {
 		if er.Code != "" {
