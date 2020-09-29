@@ -119,6 +119,9 @@ const (
 	AppOrderBySize AppOrderBy = "filesize"
 	// AppOrderByTime 时间
 	AppOrderByTime AppOrderBy = "lastOpTime"
+
+	// 空文件夹默认MD5
+	DefaultEmptyFileMd5 = "D41D8CD98F00B204E9800998ECF8427E"
 )
 
 // AppGetBasicFileInfo 根据文件ID或者文件绝对路径获取文件信息，支持文件和文件夹
