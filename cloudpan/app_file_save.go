@@ -50,6 +50,9 @@ func (p *PanClient) AppFamilySaveFileToPersonCloud(familyId int64, familyFileIdL
 	er := &apierror.AppErrorXmlResp{}
 	if err := xml.Unmarshal(respBody, er); err == nil {
 		if er.Code != "" {
+			if er.Code == "FileAlreadyExists" {
+				return false, apierror.NewApiError(apierror.ApiCodeFileAlreadyExisted, "文件已存在")
+			}
 			return false, apierror.NewFailedApiError("复制保存文件到个人云出错")
 		}
 	}
@@ -98,6 +101,9 @@ func (p *PanClient) AppSaveFileToFamilyCloud(familyId int64, personFileIdList []
 	er := &apierror.AppErrorXmlResp{}
 	if err := xml.Unmarshal(respBody, er); err == nil {
 		if er.Code != "" {
+			if er.Code == "FileAlreadyExists" {
+				return false, apierror.NewApiError(apierror.ApiCodeFileAlreadyExisted, "文件已存在")
+			}
 			return false, apierror.NewFailedApiError("复制保存文件到家庭云出错")
 		}
 	}
