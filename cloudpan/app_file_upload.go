@@ -111,6 +111,15 @@ func (p *PanClient) AppCreateUploadFile(param *AppCreateUploadFileParam) (*AppCr
 		return nil, apierror.NewApiErrorWithError(err1)
 	}
 	logger.Verboseln("response: " + string(body))
+	er := &apierror.AppErrorXmlResp{}
+	if err1 := xml.Unmarshal(body, er); err1 == nil {
+		if er.Code != "" {
+			if er.Code == "UserDayFlowOverLimited" {
+				return nil, apierror.NewApiError(apierror.UserDayFlowOverLimited, "账号上传达到每日数量限额")
+			}
+			return nil, apierror.NewFailedApiError(er.Message)
+		}
+	}
 	item := &AppCreateUploadFileResult{}
 	if err := xml.Unmarshal(body, item); err != nil {
 		logger.Verboseln("CreateUploadFile parse response failed")

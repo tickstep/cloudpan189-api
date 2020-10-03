@@ -17,6 +17,8 @@ const (
 	ApiCodeUploadFileNotFound = 15
 	// 文件已存在
 	ApiCodeFileAlreadyExisted = 16
+	// 上传达到日数量上限
+	UserDayFlowOverLimited = 17
 	// 失败
 	ApiCodeFailed ApiCode = 999
 )
