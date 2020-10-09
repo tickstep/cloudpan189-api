@@ -180,7 +180,14 @@ func (p *PanClient) AppUploadFileData(uploadUrl, uploadFileId, xRequestId string
 	return nil
 }
 
+// AppUploadFileCommit 上传文件完成提交接口
 func (p *PanClient) AppUploadFileCommit(uploadCommitUrl, uploadFileId, xRequestId string) (*AppUploadFileCommitResult, *apierror.ApiError) {
+	return p.AppUploadFileCommitOverwrite(uploadCommitUrl, uploadFileId, xRequestId, false)
+}
+
+// AppUploadFileCommitOverwrite 上传文件完成提交接口
+// 如果 overwrite=true，则会覆盖同名文件，否则如遇到同名文件新上传的文件会自动重命名
+func (p *PanClient) AppUploadFileCommitOverwrite(uploadCommitUrl, uploadFileId, xRequestId string, overwrite bool) (*AppUploadFileCommitResult, *apierror.ApiError) {
 	fullUrl := uploadCommitUrl + "?" + apiutil.PcClientInfoSuffixParam()
 	httpMethod := "POST"
 	dateOfGmt := apiutil.DateOfGmtStr()
@@ -193,9 +200,13 @@ func (p *PanClient) AppUploadFileCommit(uploadCommitUrl, uploadFileId, xRequestI
 		"Signature": apiutil.SignatureOfHmac(appToken.SessionSecret, appToken.SessionKey, httpMethod, fullUrl, dateOfGmt),
 		"X-Request-ID": requestId,
 	}
+	opertype := "1"
+	if overwrite {
+		opertype = "5"
+	}
 	formData := map[string]string {
 		"uploadFileId": uploadFileId,
-		"opertype": "1",
+		"opertype": opertype,
 		"ResumePolicy": "1",
 		"isLog": "0",
 	}
