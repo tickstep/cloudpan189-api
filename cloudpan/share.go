@@ -222,7 +222,7 @@ func (p *PanClient) ShareCancel(shareIdList []int64) (bool, *apierror.ApiError) 
 	fullUrl := &strings.Builder{}
 	shareIds := ""
 	for _, id := range shareIdList {
-		shareIds += strconv.Itoa(int(id)) + ","
+		shareIds += strconv.FormatInt(id, 10) + ","
 	}
 	if strings.LastIndex(shareIds, ",") == (len(shareIds) - 1) {
 		shareIds = text.Substr(shareIds, 0, len(shareIds) - 1)

@@ -104,7 +104,7 @@ func (p *PanClient) CreateBatchTask (param *BatchTaskParam) (taskId string, erro
 			"type": string(param.TypeFlag),
 			"taskInfos": string(taskInfosStr),
 			"targetFolderId": param.TargetFolderId,
-			"shareId": strconv.Itoa(int(param.ShareId)),
+			"shareId": strconv.FormatInt(param.ShareId, 10),
 		}
 	} else {
 		return "", apierror.NewFailedApiError("不支持的操作")

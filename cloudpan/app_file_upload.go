@@ -108,7 +108,7 @@ func (p *PanClient) AppCreateUploadFile(param *AppCreateUploadFileParam) (*AppCr
 		"parentFolderId": param.ParentFolderId,
 		"baseFileId": "",
 		"fileName": param.FileName,
-		"size": strconv.Itoa(int(param.Size)),
+		"size": strconv.FormatInt(param.Size, 10),
 		"md5": param.Md5,
 		"lastWrite": param.LastWrite,
 		"localPath": strings.ReplaceAll(param.LocalPath, "\\", "/"),
