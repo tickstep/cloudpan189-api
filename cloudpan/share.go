@@ -285,9 +285,16 @@ func (p *PanClient) ShareListDirDetail(accessUrl string, accessCode string) (int
 		return 0, nil, apierr
 	}
 
+	shortCode := ""
+	idx := strings.LastIndex(accessUrl, "/")
+	if idx > 0 {
+		rs := []rune(accessUrl)
+		shortCode = string(rs[idx+1:])
+	}
+
 	fullUrl := &strings.Builder{}
-	fmt.Fprintf(fullUrl, "%s/v2/listShareDir.action?shareId=%d&accessCode=%s&verifyCode=%s&orderBy=1&order=ASC&pageNum=1&pageSize=60 ",
-		WEB_URL, shareId, accessCode, verifyCode)
+	fmt.Fprintf(fullUrl, "%s/v2/listShareDirByShareIdAndFileId.action?shortCode=%s&accessCode=%s&verifyCode=%s&orderBy=1&order=ASC&pageNum=1&pageSize=100 ",
+		WEB_URL, shortCode, accessCode, verifyCode)
 
 	header := map[string]string {
 		"Referer": accessUrl,
