@@ -57,6 +57,11 @@ func (p *PanClient) AppGetFileDownloadUrl(fileId string) (string, *apierror.ApiE
 	}
 	logger.Verboseln("response: " + string(body))
 
+	// handler common error
+	if apiErr := apierror.ParseAppCommonApiError(body); apiErr != nil {
+		return "", apiErr
+	}
+
 	type fdUrl struct {
 		XMLName xml.Name `xml:"fileDownloadUrl"`
 		FileDownloadUrl string `xml:",innerxml"`
