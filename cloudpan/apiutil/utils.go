@@ -42,6 +42,11 @@ FlhDeqVOG094hFJvZeK4OzA6HVwzwnEW5vIZ7d+u61RV1bsFxmB68+8JXs3ycGcE
 	FileNameSpecialChars = "\\/:*?\"<>|"
 )
 
+var (
+	// UUID for client sn
+	clientSn = strings.ToUpper(uuid.NewV4().String())
+)
+
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
@@ -148,6 +153,10 @@ func DateOfGmtStr() string {
 func XRequestId() string {
 	u4 := uuid.NewV4()
 	return strings.ToUpper(u4.String())
+}
+
+func ClientSn() string {
+	return clientSn
 }
 
 func Uuid() string {
