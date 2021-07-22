@@ -55,10 +55,12 @@ func (p *PanClient) UserDrawPrize(taskId ActivityTaskId) (*UserDrawPrizeResult, 
 	fullUrl := &strings.Builder{}
 	fmt.Fprintf(fullUrl, "https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=%s&activityId=ACT_SIGNIN",
 		taskId)
+	logger.Verboseln("do request url: " + fullUrl.String())
 	body, err := p.client.DoGet(fullUrl.String())
 	if err != nil {
 		return nil, apierror.NewApiErrorWithError(err)
 	}
+	logger.Verboseln("response: " + string(body))
 
 	item := &userDrawPrizeResp{}
 	if err := json.Unmarshal(body, item); err != nil {
