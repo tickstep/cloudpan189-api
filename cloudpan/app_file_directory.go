@@ -415,6 +415,12 @@ func (p *PanClient) AppFileList(param *AppFileListParam) (*AppFileListResult, *a
 		return nil, apierror.NewApiErrorWithError(err1)
 	}
 	logger.Verboseln("response: " + string(respBody))
+
+	// handler common error
+	if apiErr := apierror.ParseAppCommonApiError(respBody); apiErr != nil {
+		return nil, apiErr
+	}
+
 	er := &apierror.AppErrorXmlResp{}
 	if err := xml.Unmarshal(respBody, er); err == nil {
 		if er.Code != "" {

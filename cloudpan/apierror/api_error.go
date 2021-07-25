@@ -14,7 +14,7 @@
 
 package apierror
 
-import "encoding/json"
+import "encoding/xml"
 
 const (
 	// 成功
@@ -88,7 +88,7 @@ func (a *ApiError) ErrCode() ApiCode {
 // ParseAppCommonApiError 解析公共错误，如果没有错误则返回nil
 func ParseAppCommonApiError(data []byte) *ApiError  {
 	errResp := &AppErrorXmlResp{}
-	if err := json.Unmarshal(data, errResp); err == nil {
+	if err := xml.Unmarshal(data, errResp); err == nil {
 		if errResp.Code != "" {
 			if "InvalidArgument" == errResp.Code {
 				return NewApiError(ApiCodeInvalidArgument, errResp.Message)
