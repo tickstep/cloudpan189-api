@@ -37,9 +37,11 @@ const (
 	// 文件已存在
 	ApiCodeFileAlreadyExisted = 16
 	// 上传达到日数量上限
-	UserDayFlowOverLimited = 17
+	ApiCodeUserDayFlowOverLimited = 17
 	// 参数无效，或者token过期
 	ApiCodeInvalidArgument = 18
+	// 敏感文件，禁止上传
+	ApiCodeInfoSecurityError = 19
 )
 
 type ApiCode int
@@ -91,7 +93,11 @@ func ParseAppCommonApiError(data []byte) *ApiError  {
 	if err := xml.Unmarshal(data, errResp); err == nil {
 		if errResp.Code != "" {
 			if "InvalidArgument" == errResp.Code {
-				return NewApiError(ApiCodeInvalidArgument, errResp.Message)
+				return NewApiError(ApiCodeInvalidArgument, "参数无效")
+			} else if "InfoSecurityErrorCode" == errResp.Code {
+				return NewApiError(ApiCodeInfoSecurityError, "敏感文件或受版权保护，禁止上传")
+			} else if "UserDayFlowOverLimited" == errResp.Code {
+				return NewApiError(ApiCodeUserDayFlowOverLimited, "账号上传达到每日数量限额")
 			}
 			return NewFailedApiError(errResp.Message)
 		}

@@ -55,6 +55,11 @@ func (p *PanClient) AppFamilyCreateUploadFile(param *AppCreateUploadFileParam) (
 	}
 	logger.Verboseln("response: " + string(body))
 
+	// handler common error
+	if apiErr := apierror.ParseAppCommonApiError(body); apiErr != nil {
+		return nil, apiErr
+	}
+
 	item := &AppCreateUploadFileResult{}
 	if err := xml.Unmarshal(body, item); err != nil {
 		logger.Verboseln("AppFamilyCreateUploadFile parse response failed")
