@@ -21,7 +21,6 @@ import (
 	"github.com/tickstep/library-go/logger"
 	"github.com/tickstep/library-go/text"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -79,13 +78,13 @@ type (
 		// ReviewStatus 审查状态，1-正常
 		ReviewStatus int `json:"reviewStatus"`
 		// ShareDate 分享日期
-		ShareDate string `json:"shareDate"`
+		ShareDate int64 `json:"shareDate"`
 		// ShareId 分享项目ID，唯一标识该分享项
 		ShareId int64 `json:"shareId"`
 		// ShareMode 分享模式，1-私密，2-公开
 		ShareMode ShareMode `json:"shareMode"`
 		// ShareTime 分享时间
-		ShareTime string `json:"shareTime"`
+		ShareTime int64 `json:"shareTime"`
 		// ShareType 分享类别，默认都是1
 		ShareType int `json:"shareType"`
 		// ShortShareUrl 分享的访问路径，和 AccessURL 一致
@@ -112,16 +111,40 @@ type (
 		ErrorVO apierror.ErrorResp `json:"errorVO"`
 	}
 
-	ShareListDirResult struct {
-		AccessCount AccessCount `json:"accessCount"`
-		Data FileList `json:"data"`
-		Digest string `json:"digest"`
-		ExpireTime int64 `json:"expireTime"`
-		ExpireType int `json:"expireType"`
-		PageNum int `json:"pageNum"`
-		PageSize int `json:"pageSize"`
-		RecordCount int `json:"recordCount"`
-		ShareDate string `json:"shareDate"`
+	// 转存分享
+	listShareDirResult struct {
+		ResCode    int    `json:"res_code"`
+		ResMessage string `json:"res_message"`
+		ExpireTime int    `json:"expireTime"`
+		ExpireType int    `json:"expireType"`
+		FileListAO struct {
+			Count    int `json:"count"`
+			FileList []struct {
+				CreateDate string `json:"createDate"`
+				FileCata   int    `json:"fileCata"`
+				Id         int64 `json:"id"`
+				LastOpTime string `json:"lastOpTime"`
+				Md5        string `json:"md5"`
+				MediaType  int    `json:"mediaType"`
+				Name       string `json:"name"`
+				Rev        string `json:"rev"`
+				Size       int64    `json:"size"`
+				StarLabel  int    `json:"starLabel"`
+			} `json:"fileList"`
+			FileListSize int64 `json:"fileListSize"`
+			FolderList   []struct {
+				CreateDate   string `json:"createDate"`
+				FileCata     int    `json:"fileCata"`
+				FileListSize int    `json:"fileListSize"`
+				Id           int64 `json:"id"`
+				LastOpTime   string `json:"lastOpTime"`
+				Name         string `json:"name"`
+				ParentId     int64 `json:"parentId"`
+				Rev          string `json:"rev"`
+				StarLabel    int    `json:"starLabel"`
+			} `json:"folderList"`
+		} `json:"fileListAO"`
+		LastRev int64 `json:"lastRev"`
 	}
 
 )
@@ -197,7 +220,7 @@ func NewShareListParam() *ShareListParam {
 }
 func (p *PanClient) ShareList(param *ShareListParam) (*ShareListResult, *apierror.ApiError) {
 	fullUrl := &strings.Builder{}
-	fmt.Fprintf(fullUrl, "%s/v2/listShares.action?shareType=%d&pageNum=%d&pageSize=%d",
+	fmt.Fprintf(fullUrl, "%s/api/portal/listShares.action?shareType=%d&pageNum=%d&pageSize=%d",
 		WEB_URL, param.ShareType, param.PageNum, param.PageSize)
 	logger.Verboseln("do request url: " + fullUrl.String())
 	body, err := p.client.DoGet(fullUrl.String())
@@ -228,7 +251,7 @@ func (p *PanClient) ShareCancel(shareIdList []int64) (bool, *apierror.ApiError) 
 		shareIds = text.Substr(shareIds, 0, len(shareIds) - 1)
 	}
 
-	fmt.Fprintf(fullUrl, "%s/v2/cancelShare.action?shareIdList=%s&ancelType=1",
+	fmt.Fprintf(fullUrl, "%s/api/portal/cancelShare.action?shareIdList=%s&ancelType=1",
 		WEB_URL, url.QueryEscape(shareIds))
 	logger.Verboseln("do request url: " + fullUrl.String())
 	body, err := p.client.DoGet(fullUrl.String())
@@ -251,99 +274,107 @@ func (p *PanClient) ShareCancel(shareIdList []int64) (bool, *apierror.ApiError) 
 	return item.Success, nil
 }
 
-func (p *PanClient) ShareGetIdByUrl(accessUrl string) (int64, string, *apierror.ApiError) {
-	if strings.Index(accessUrl, WEB_URL) < 0 {
-		return 0, "", apierror.NewFailedApiError("URL错误")
-	}
-	fullUrl := &strings.Builder{}
-	fmt.Fprintf(fullUrl, "%s", accessUrl)
-	logger.Verboseln("do request url: " + fullUrl.String())
-	body, err := p.client.DoGet(fullUrl.String())
-	if err != nil {
-		logger.Verboseln("ShareGetIdByUrl failed")
-		return 0, "", apierror.NewApiErrorWithError(err)
-	}
-
-	htmlText := string(body)
-
-	re, _ := regexp.Compile("_shareId = '(.+?)'")
-	shareIdStr := re.FindStringSubmatch(htmlText)[1]
-	shareId := 0
-	if shareIdStr != "" {
-		shareId,_ = strconv.Atoi(shareIdStr)
-	}
-
-	re, _ = regexp.Compile("_verifyCode = '(.+?)'")
-	verifyCodeStr := re.FindStringSubmatch(htmlText)[1]
-
-	return int64(shareId), verifyCodeStr, nil
-}
-
-func (p *PanClient) ShareListDirDetail(accessUrl string, accessCode string) (int64, *ShareListDirResult, *apierror.ApiError) {
-	shareId, verifyCode, apierr := p.ShareGetIdByUrl(accessUrl)
-	if apierr != nil {
-		return 0, nil, apierr
-	}
-
-	shortCode := ""
+// ShareSave 转存分享到对应的文件夹
+func (p *PanClient) ShareSave(accessUrl string, accessCode string, savePanDirId string) (bool, *apierror.ApiError) {
+	shareCode := ""
 	idx := strings.LastIndex(accessUrl, "/")
 	if idx > 0 {
 		rs := []rune(accessUrl)
-		shortCode = string(rs[idx+1:])
+		shareCode = string(rs[idx+1:])
 	}
-
 	fullUrl := &strings.Builder{}
-	fmt.Fprintf(fullUrl, "%s/v2/listShareDirByShareIdAndFileId.action?shortCode=%s&accessCode=%s&verifyCode=%s&orderBy=1&order=ASC&pageNum=1&pageSize=100 ",
-		WEB_URL, shortCode, accessCode, verifyCode)
-
 	header := map[string]string {
-		"Referer": accessUrl,
+		"accept": "application/json;charset=UTF-8",
+		"origin": "https://cloud.189.cn",
+		"Referer": "https://cloud.189.cn/web/share?code=" + shareCode,
+		"user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_3_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36",
 	}
+
+	// 获取分享基础信息
+	fmt.Fprintf(fullUrl, "%s/api/open/share/getShareInfoByCode.action?&shareCode=%s",
+		WEB_URL, shareCode)
 
 	logger.Verboseln("do request url: " + fullUrl.String())
 	body, err := client.Fetch("GET", fullUrl.String(), nil, header)
 	if err != nil {
 		logger.Verboseln("ShareListDirDetail failed")
-		return 0, nil, apierror.NewApiErrorWithError(err)
+		return false, apierror.NewApiErrorWithError(err)
 	}
 
-	item := &ShareListDirResult{}
-	if err := json.Unmarshal(body, item); err != nil {
-		logger.Verboseln("ShareListDirDetail response failed")
-		return 0, nil, apierror.NewApiErrorWithError(err)
+	type shareInfoByCode struct {
+		ResCode    int    `json:"res_code"`
+		ResMessage string `json:"res_message"`
+		AccessCode string `json:"accessCode"`
+		ExpireTime     int    `json:"expireTime"`
+		ExpireType     int    `json:"expireType"`
+		FileId         string `json:"fileId"`
+		FileName       string `json:"fileName"`
+		FileSize       int    `json:"fileSize"`
+		IsFolder       bool   `json:"isFolder"`
+		NeedAccessCode int    `json:"needAccessCode"`
+		ShareDate      int64  `json:"shareDate"`
+		ShareId        int64    `json:"shareId"`
+		ShareMode      int    `json:"shareMode"`
+		ShareType      int    `json:"shareType"`
 	}
-	return shareId, item, nil
-}
-
-// ShareSave 转存分享到对应的文件夹
-func (p *PanClient) ShareSave(accessUrl string, accessCode string, savePanDirId string) (bool, *apierror.ApiError) {
-	shareId, shareListDirResult, apierror := p.ShareListDirDetail(accessUrl, accessCode)
-	if apierror != nil {
-		return false, apierror
+	shareInfoEnity := &shareInfoByCode{}
+	if err := json.Unmarshal(body, shareInfoEnity); err != nil {
+		logger.Verboseln("getShareInfoByCode response failed")
+		return false, apierror.NewApiErrorWithError(err)
 	}
 
+
+	// 获取分享文件列表
+	fullUrl = &strings.Builder{}
+	if shareInfoEnity.IsFolder {
+		fmt.Fprintf(fullUrl, "%s/api/open/share/listShareDir.action?pageNum=1&pageSize=60&fileId=%s&shareDirFileId=%s&isFolder=true&shareId=%d&shareMode=%d&iconOption=5&orderBy=lastOpTime&descending=true&accessCode=%s",
+			WEB_URL, shareInfoEnity.FileId, shareInfoEnity.FileId, shareInfoEnity.ShareId, shareInfoEnity.ShareMode, accessCode)
+	} else {
+		fmt.Fprintf(fullUrl, "%s/api/open/share/listShareDir.action?fileId=%s&shareId=%d&shareMode=%d&isFolder=false&iconOption=5&pageNum=1&pageSize=10&accessCode=%s",
+			WEB_URL, shareInfoEnity.FileId, shareInfoEnity.ShareId, shareInfoEnity.ShareMode, accessCode)
+	}
+	logger.Verboseln("do request url: " + fullUrl.String())
+	body, err = client.Fetch("GET", fullUrl.String(), nil, header)
+	if err != nil {
+		logger.Verboseln("listShareDir failed")
+		return false, apierror.NewApiErrorWithError(err)
+	}
+
+	listShareDirEnity := &listShareDirResult{}
+	if err := json.Unmarshal(body, listShareDirEnity); err != nil {
+		logger.Verboseln("listShareDir response failed")
+		return false, apierror.NewApiErrorWithError(err)
+	}
+
+    // 转存分享
 	taskReqParam := &BatchTaskParam{
 		TypeFlag: BatchTaskTypeShareSave,
-		TaskInfos: makeBatchTaskInfoListForShareSave(shareListDirResult.Data),
+		TaskInfos: makeBatchTaskInfoListForShareSave(listShareDirEnity),
 		TargetFolderId: savePanDirId,
-		ShareId: shareId,
+		ShareId: shareInfoEnity.ShareId,
 	}
 	taskId, apierror1 := p.CreateBatchTask(taskReqParam)
 	logger.Verboseln("share save taskid: ", taskId)
 	return taskId != "", apierror1
 }
 
-func makeBatchTaskInfoListForShareSave(opFileList FileList) (infoList BatchTaskInfoList) {
-	for _, fe := range opFileList {
-		isFolder := 0
-		if fe.IsFolder {
-			isFolder = 1
-		}
+func makeBatchTaskInfoListForShareSave(opFileList *listShareDirResult) (infoList BatchTaskInfoList) {
+	// file
+	for _, fe := range opFileList.FileListAO.FileList {
 		infoItem := &BatchTaskInfo{
-			FileId: fe.FileId,
-			FileName: fe.FileName,
-			IsFolder: isFolder,
-			SrcParentId: fe.ParentId,
+			FileId: strconv.FormatInt(fe.Id, 10),
+			FileName: fe.Name,
+			IsFolder: 0,
+		}
+		infoList = append(infoList, infoItem)
+	}
+
+	// folder
+	for _, fe := range opFileList.FileListAO.FolderList {
+		infoItem := &BatchTaskInfo{
+			FileId: strconv.FormatInt(fe.Id, 10),
+			FileName: fe.Name,
+			IsFolder: 1,
 		}
 		infoList = append(infoList, infoItem)
 	}

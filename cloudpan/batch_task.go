@@ -100,6 +100,23 @@ func (p *PanClient) CreateBatchTask (param *BatchTaskParam) (taskId string, erro
 			"targetFolderId": param.TargetFolderId,
 		}
 	} else if BatchTaskTypeShareSave == param.TypeFlag {
+		type batchTaskShareSaveInfo struct {
+			// FileId 文件ID
+			FileId string `json:"fileId"`
+			// FileName 文件名
+			FileName string `json:"fileName"`
+			// IsFolder 是否是文件夹，0-否，1-是
+			IsFolder int `json:"isFolder"`
+		}
+		tsl := []*batchTaskShareSaveInfo{}
+		for _,item := range param.TaskInfos {
+			tsl = append(tsl, &batchTaskShareSaveInfo{
+				FileId: item.FileId,
+				FileName: item.FileName,
+				IsFolder: item.IsFolder,
+			})
+		}
+		taskInfosStr, _ = json.Marshal(tsl)
 		postData = map[string]string {
 			"type": string(param.TypeFlag),
 			"taskInfos": string(taskInfosStr),
