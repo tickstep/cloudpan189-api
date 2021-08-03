@@ -62,6 +62,14 @@ func (p *PanClient) UserDrawPrize(taskId ActivityTaskId) (*UserDrawPrizeResult, 
 	}
 	logger.Verboseln("response: " + string(body))
 
+	errResp := &apierror.ErrorResp{}
+	if err := json.Unmarshal(body, errResp); err == nil {
+		if errResp.ErrorCode == "User_Not_Chance" {
+			return nil, apierror.NewFailedApiError("今日已无抽奖机会")
+		}
+		return nil, apierror.NewFailedApiError(errResp.ErrorCode)
+	}
+
 	item := &userDrawPrizeResp{}
 	if err := json.Unmarshal(body, item); err != nil {
 		logger.Verboseln("UserDrawPrize parse response failed")
