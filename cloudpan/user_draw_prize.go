@@ -24,17 +24,17 @@ import (
 
 type (
 	userDrawPrizeResp struct {
-		ActivityId string `json:"activityId"`
-		Description string `json:"description"`
-		IsUsed int `json:"isUsed"`
-		ListId int `json:"listId"`
-		PrizeGrade int `json:"prizeGrade"`
-		PrizeId string `json:"prizeId"`
-		PrizeName string `json:"prizeName"`
-		PrizeStatus int `json:"prizeStatus"`
-		PrizeType int `json:"prizeType"`
-		UseDate string `json:"useDate"`
-		UserId int64 `json:"userId"`
+		ActivityId   string `json:"activityId"`
+		Description  string `json:"description"`
+		IsUsed       int    `json:"isUsed"`
+		PrizeGrade   int    `json:"prizeGrade"`
+		PrizeId      string `json:"prizeId"`
+		PrizeName    string `json:"prizeName"`
+		PrizeStatus  int    `json:"prizeStatus"`
+		PrizeType    int    `json:"prizeType"`
+		ShowPriority int    `json:"showPriority"`
+		UseDate      string `json:"useDate"`
+		UserId       int    `json:"userId"`
 	}
 
 	UserDrawPrizeResult struct {
@@ -79,7 +79,7 @@ func (p *PanClient) UserDrawPrize(taskId ActivityTaskId) (*UserDrawPrizeResult, 
 	result := UserDrawPrizeResult{}
 	if item.PrizeStatus == 1 {
 		result.Success = true
-		result.Tip = item.Description
+		result.Tip = item.PrizeName
 		return &result, nil
 	}
 	return nil, apierror.NewFailedApiError("抽奖失败")
