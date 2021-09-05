@@ -64,10 +64,12 @@ func (p *PanClient) UserDrawPrize(taskId ActivityTaskId) (*UserDrawPrizeResult, 
 
 	errResp := &apierror.ErrorResp{}
 	if err := json.Unmarshal(body, errResp); err == nil {
-		if errResp.ErrorCode == "User_Not_Chance" {
-			return nil, apierror.NewFailedApiError("今日已无抽奖机会")
+		if errResp.ErrorCode != "" {
+			if errResp.ErrorCode == "User_Not_Chance" {
+				return nil, apierror.NewFailedApiError("今日已无抽奖机会")
+			}
+			return nil, apierror.NewFailedApiError(errResp.ErrorCode)
 		}
-		return nil, apierror.NewFailedApiError(errResp.ErrorCode)
 	}
 
 	item := &userDrawPrizeResp{}
@@ -77,7 +79,7 @@ func (p *PanClient) UserDrawPrize(taskId ActivityTaskId) (*UserDrawPrizeResult, 
 	}
 
 	result := UserDrawPrizeResult{}
-	if item.PrizeStatus == 1 {
+	if item.PrizeName != "" {
 		result.Success = true
 		result.Tip = item.PrizeName
 		return &result, nil
