@@ -141,7 +141,6 @@ func PreviewPhotoSignatureOfHmac(secretKey, sessionKey, fileId, size, timeStamp 
 	plainStr := &strings.Builder{}
 	fmt.Fprintf(plainStr, "SessionKey=%s&Operate=GET&FileId=%s&Size=%s&TimeStamp=%s",
 		sessionKey, fileId, size, timeStamp)
-	fmt.Println(plainStr)
 	key := []byte(secretKey)
 	mac := hmac.New(sha1.New, key)
 	mac.Write([]byte(plainStr.String()))
