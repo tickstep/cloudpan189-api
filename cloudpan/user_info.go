@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"github.com/tickstep/cloudpan189-api/cloudpan/apierror"
 	"github.com/tickstep/library-go/logger"
+	"strconv"
 	"strings"
 )
 
@@ -39,14 +40,14 @@ type (
 		UsedSize uint64 `json:"usedSize"`
 		// 个人空间总大小
 		Quota uint64 `json:"quota"`
-		// 会员开始时间
-		SuperBeginTime string `json:"superBeginTime"`
-		// 会员结束时间
-		SuperEndTime string `json:"superEndTime"`
-		// 今天是否已签到
-		IsSign bool `json:"isSign"`
-		// VIP会员标志位
-		SuperVip UserVip `json:"superVip"`
+		//// 会员开始时间
+		//SuperBeginTime string `json:"superBeginTime"`
+		//// 会员结束时间
+		//SuperEndTime string `json:"superEndTime"`
+		//// 今天是否已签到
+		//IsSign bool `json:"isSign"`
+		//// VIP会员标志位
+		//SuperVip UserVip `json:"superVip"`
 	}
 
 	UserDetailInfo struct {
@@ -87,8 +88,11 @@ const (
 )
 
 func (p *PanClient) GetUserInfo() (userInfo *UserInfo, error *apierror.ApiError) {
-	url := WEB_URL + "/v2/getLoginedInfos.action"
-	body, err := p.client.DoGet(url)
+	header := map[string]string{
+		"accept": "application/json;charset=UTF-8",
+	}
+	url := WEB_URL + "/api/open/user/getUserInfoForPortal.action"
+	body, err := p.client.Fetch("GET", url, nil, header)
 	if err != nil {
 		logger.Verboseln("get user info failed")
 		return nil, apierror.NewApiErrorWithError(err)
@@ -106,12 +110,45 @@ func (p *PanClient) GetUserInfo() (userInfo *UserInfo, error *apierror.ApiError)
 		return nil, apierror.NewApiError(apierror.ApiCodeTokenExpiredCode, "登录超时")
 	}
 
-	ui := &UserInfo{}
+	type userInfoForPortal struct {
+		ResCode         int    `json:"res_code"`
+		ResMessage      string `json:"res_message"`
+		Available       int64  `json:"available"`
+		Capacity        int64  `json:"capacity"`
+		DomainName      string `json:"domainName"`
+		ExtPicAvailable int    `json:"extPicAvailable"`
+		ExtPicCapacity  int    `json:"extPicCapacity"`
+		ExtPicUsed      int    `json:"extPicUsed"`
+		HasFamily       int    `json:"hasFamily"`
+		LoginName       string `json:"loginName"`
+		Mail189UsedSize int    `json:"mail189UsedSize"`
+		MaxFilesize     int64  `json:"maxFilesize"`
+		OrderAmount     int    `json:"orderAmount"`
+		ProvinceCode    string `json:"provinceCode"`
+		UserExtResp     struct {
+			DomainSpaceAccount string `json:"domainSpaceAccount"`
+			Gender             string `json:"gender"`
+			NickName           string `json:"nickName"`
+			SafeQustion        int    `json:"safeQustion"`
+		} `json:"userExtResp"`
+	}
+
+	ui := &userInfoForPortal{}
 	if err := json.Unmarshal(body, ui); err != nil {
 		logger.Verboseln("get user info failed")
 		return nil, apierror.NewApiErrorWithError(err)
 	}
-	return ui, nil
+	userId, _ := strconv.ParseInt(ui.DomainName, 10, 0)
+	userInfo = &UserInfo{
+		UserId:      uint64(userId),
+		UserAccount: ui.LoginName,
+		Nickname:    ui.UserExtResp.NickName,
+		DomainName:  ui.DomainName,
+		Used189Size: uint64(ui.Mail189UsedSize),
+		UsedSize:    uint64(ui.Capacity - ui.Available),
+		Quota:       uint64(ui.Capacity),
+	}
+	return userInfo, nil
 }
 
 func (p *PanClient) GetUserDetailInfo() (userDetailInfo *UserDetailInfo, error *apierror.ApiError) {
