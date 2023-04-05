@@ -27,27 +27,19 @@ type (
 	// RecycleFileInfo 回收站中文件/目录信息
 	RecycleFileInfo struct {
 		// CreateTime 创建时间
-		CreateTime string `json:"createTime"`
+		CreateDate string `json:"createDate"`
 		// FileId 文件ID
-		FileId string `json:"fileId"`
+		FileId int64 `json:"id"`
 		// FileName 文件名
-		FileName string `json:"fileName"`
+		FileName string `json:"name"`
 		// FileSize 文件大小，文件夹为0
-		FileSize int64 `json:"fileSize"`
-		// FileType 文件类型，后缀名，例如:"dmg"，没有则为空
-		FileType string `json:"fileType"`
-		// IsFolder 是否是文件夹
-		IsFolder bool `json:"isFolder"`
-		// IsFamilyFile 是否是家庭云文件
-		IsFamilyFile bool `json:"isFamilyFile"`
+		FileSize int64 `json:"size"`
 		// LastOpTime 最后修改时间
 		LastOpTime string `json:"lastOpTime"`
 		// ParentId 父文件ID
-		ParentId string `json:"parentId"`
-		// DownloadUrl 下载路径，只有文件才有
-		DownloadUrl string `json:"downloadUrl"`
+		Md5 string `json:"md5"`
 		// MediaType 媒体类型
-		MediaType MediaType `json:"mediaType"`
+		MediaType int `json:"mediaType"`
 		// PathStr 文件的完整路径
 		PathStr string `json:"pathStr"`
 	}
@@ -56,15 +48,11 @@ type (
 
 	RecycleFileListResult struct {
 		// Data 数据
-		Data RecycleFileInfoList `json:"data"`
-		// PageNum 页数量，从1开始
-		PageNum uint `json:"pageNum"`
-		// PageSize 页大小，默认60
-		PageSize uint `json:"pageSize"`
+		FileList RecycleFileInfoList `json:"fileList"`
 		// RecordCount 文件总数量
-		RecordCount uint `json:"recordCount"`
-		FamilyId int64 `json:"familyId"`
-		FamilyName string `json:"familyName"`
+		Count   uint   `json:"count"`
+		Code    int64  `json:"res_code"`
+		Message string `json:"res_message"`
 	}
 
 	RecycleFileActResult struct {
@@ -81,15 +69,14 @@ func (p *PanClient) RecycleList(pageNum, pageSize int) (result *RecycleFileListR
 		pageSize = 60
 	}
 	fullUrl := &strings.Builder{}
-	fmt.Fprintf(fullUrl, "%s/v2/listRecycleBin.action?pageNum=%d&pageSize=%d",
+	fmt.Fprintf(fullUrl, "%s/api/open/file/listRecycleBinFiles.action?pageNum=%d&pageSize=%d&iconOption=1&family=false",
 		WEB_URL, pageNum, pageSize)
 	logger.Verboseln("do request url: " + fullUrl.String())
-	//header := map[string]string {
-	//	"X-Requested-With": "XMLHttpRequest",
-	//	"Accept": "*/*",
-	//	"Referer": "https://cloud.189.cn/main.action",
-	//}
-	body, err := p.client.DoGet(fullUrl.String())
+	headers := map[string]string{
+		"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+		"accept":       "application/json;charset=UTF-8",
+	}
+	body, err := p.client.Fetch("GET", fullUrl.String(), nil, headers)
 	if err != nil {
 		logger.Verboseln("RecycleList failed")
 		return nil, apierror.NewApiErrorWithError(err)
@@ -108,7 +95,7 @@ func (p *PanClient) RecycleDelete(familyId int64, fileIdList []string) *apierror
 	if fileIdList == nil {
 		return nil
 	}
-	if familyId <=0 {
+	if familyId <= 0 {
 		fmt.Fprintf(fullUrl, "%s/v2/deleteFile.action?fileIdList=%s",
 			WEB_URL, url.QueryEscape(strings.Join(fileIdList, ",")))
 	} else {
@@ -139,32 +126,32 @@ func (p *PanClient) RecycleRestore(fileList []*RecycleFileInfo) (taskId string, 
 	}
 
 	taskReqParam := &BatchTaskParam{
-		TypeFlag: BatchTaskTypeRecycleRestore,
+		TypeFlag:  BatchTaskTypeRecycleRestore,
 		TaskInfos: makeBatchTaskInfoList(fileList),
 	}
 	return p.CreateBatchTask(taskReqParam)
 }
 
 func makeBatchTaskInfoList(opFileList []*RecycleFileInfo) (infoList BatchTaskInfoList) {
-	for _, fe := range opFileList {
-		isFolder := 0
-		if fe.IsFolder {
-			isFolder = 1
-		}
-		infoItem := &BatchTaskInfo{
-			FileId: fe.FileId,
-			FileName: fe.FileName,
-			IsFolder: isFolder,
-			SrcParentId: fe.ParentId,
-		}
-		infoList = append(infoList, infoItem)
-	}
+	//for _, fe := range opFileList {
+	//	isFolder := 0
+	//	if fe.IsFolder {
+	//		isFolder = 1
+	//	}
+	//	infoItem := &BatchTaskInfo{
+	//		FileId:      fe.FileId,
+	//		FileName:    fe.FileName,
+	//		IsFolder:    isFolder,
+	//		SrcParentId: fe.ParentId,
+	//	}
+	//	infoList = append(infoList, infoItem)
+	//}
 	return
 }
 
 func (p *PanClient) RecycleClear(familyId int64) *apierror.ApiError {
 	fullUrl := &strings.Builder{}
-	if familyId <=0 {
+	if familyId <= 0 {
 		fmt.Fprintf(fullUrl, "%s/v2/emptyRecycleBin.action",
 			WEB_URL)
 	} else {
