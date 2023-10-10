@@ -34,12 +34,11 @@ var (
 
 type (
 	PanClient struct {
-		client     *requester.HTTPClient // http 客户端
+		client   *requester.HTTPClient // http 客户端
 		webToken WebLoginToken
 		appToken AppLoginToken
 	}
 )
-
 
 func NewPanClient(webToken WebLoginToken, appToken AppLoginToken) *PanClient {
 	client := requester.NewHTTPClient()
@@ -49,17 +48,13 @@ func NewPanClient(webToken WebLoginToken, appToken AppLoginToken) *PanClient {
 			Name:   "COOKIE_LOGIN_USER",
 			Value:  webToken.CookieLoginUser,
 			Domain: "cloud.189.cn",
-			Path: "/",
+			Path:   "/",
 		},
 	})
 
 	return &PanClient{
-		client: client,
+		client:   client,
 		webToken: webToken,
 		appToken: appToken,
 	}
 }
-
-//func (p *PanClient) HttpClient() *requester.HTTPClient {
-//	return p.client
-//}

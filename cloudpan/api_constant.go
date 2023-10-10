@@ -15,7 +15,20 @@
 package cloudpan
 
 const (
-	WEB_URL string = "https://cloud.189.cn"
+	WEB_URL  string = "https://cloud.189.cn"
 	AUTH_URL string = "https://open.e.189.cn/api/logbox/oauth2"
-	API_URL string = "https://api.cloud.189.cn"
+	API_URL  string = "https://api.cloud.189.cn"
+
+	ACCOUNT_TYPE = "02"
+	APP_ID       = "8025431004"
+	CLIENT_TYPE  = "10020"
+	VERSION      = "6.2"
+
+	UPLOAD_URL = "https://upload.cloud.189.cn"
+	RETURN_URL = "https://m.cloud.189.cn/zhuanti/2020/loginErrorPc/index.html"
+
+	PC  = "TELEPC"
+	MAC = "TELEMAC"
+
+	CHANNEL_ID = "web_cloud.189.cn"
 )

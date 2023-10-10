@@ -14,7 +14,10 @@
 
 package apierror
 
-import "encoding/xml"
+import (
+	"encoding/json"
+	"encoding/xml"
+)
 
 const (
 	// 成功
@@ -48,11 +51,11 @@ type ApiCode int
 
 type ApiError struct {
 	Code ApiCode
-	Err string
+	Err  string
 }
 
 func NewApiError(code ApiCode, err string) *ApiError {
-	return &ApiError {
+	return &ApiError{
 		code,
 		err,
 	}
@@ -88,11 +91,32 @@ func (a *ApiError) ErrCode() ApiCode {
 }
 
 // ParseAppCommonApiError 解析公共错误，如果没有错误则返回nil
-func ParseAppCommonApiError(data []byte) *ApiError  {
+func ParseAppCommonApiError(data []byte) *ApiError {
 	errResp := &AppErrorXmlResp{}
 	if err := xml.Unmarshal(data, errResp); err == nil {
 		if errResp.Code != "" {
 			if "InvalidArgument" == errResp.Code {
+				return NewApiError(ApiCodeInvalidArgument, "参数无效")
+			} else if "InfoSecurityErrorCode" == errResp.Code {
+				return NewApiError(ApiCodeInfoSecurityError, "敏感文件或受版权保护，禁止上传")
+			} else if "UserDayFlowOverLimited" == errResp.Code {
+				return NewApiError(ApiCodeUserDayFlowOverLimited, "账号上传达到每日数量限额")
+			}
+			return NewFailedApiError(errResp.Message)
+		}
+	}
+	return nil
+}
+
+// ParseAppJsonCommonApiError 解析公共错误，如果没有错误则返回nil
+func ParseAppJsonCommonApiError(data []byte) *ApiError {
+	errResp := &AppErrorJsonResp{}
+	if err := json.Unmarshal(data, errResp); err == nil {
+		if errResp.Code != "" {
+			if "SUCCESS" == errResp.Code {
+				// 没有错误
+				return nil
+			} else if "InvalidArgument" == errResp.Code {
 				return NewApiError(ApiCodeInvalidArgument, "参数无效")
 			} else if "InfoSecurityErrorCode" == errResp.Code {
 				return NewApiError(ApiCodeInfoSecurityError, "敏感文件或受版权保护，禁止上传")

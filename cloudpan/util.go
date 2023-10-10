@@ -117,3 +117,15 @@ func (p *PanClient) MatchPathByShellPattern(familyId int64, pattern string) (res
 	p.recurseMatchPathByShellPattern(familyId, 1, &patternSlice, parentFile, resultList)
 	return resultList, nil
 }
+
+func (p *PanClient) EncryptParams(params Params) string {
+	sessionSecret := p.appToken.SessionSecret
+	if params.isFamily() {
+		sessionSecret = p.appToken.FamilySessionSecret
+	}
+	
+	if params != nil {
+		return AesECBEncrypt(params.Encode(), sessionSecret[:16])
+	}
+	return ""
+}

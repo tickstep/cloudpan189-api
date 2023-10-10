@@ -37,7 +37,7 @@ FlhDeqVOG094hFJvZeK4OzA6HVwzwnEW5vIZ7d+u61RV1bsFxmB68+8JXs3ycGcE
 -----END PUBLIC KEY-----`
 
 	b64map = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-	bi_rm = "0123456789abcdefghijklmnopqrstuvwxyz"
+	bi_rm  = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 	FileNameSpecialChars = "\\/:*?\"<>|"
 )
@@ -60,7 +60,7 @@ func B64toHex(b64str string) (hexstr string) {
 	sb := strings.Builder{}
 	e := 0
 	c := 0
-	for _,r := range b64str {
+	for _, r := range b64str {
 		if r != '=' {
 			v := strings.Index(b64map, string(r))
 			if 0 == e {
@@ -69,7 +69,7 @@ func B64toHex(b64str string) (hexstr string) {
 				c = 3 & v
 			} else if 1 == e {
 				e = 2
-				sb.WriteByte(int2char(c << 2 | v >> 4))
+				sb.WriteByte(int2char(c<<2 | v>>4))
 				c = 15 & v
 			} else if 2 == e {
 				e = 3
@@ -78,7 +78,7 @@ func B64toHex(b64str string) (hexstr string) {
 				c = 3 & v
 			} else {
 				e = 0
-				sb.WriteByte(int2char(c << 2 | v >> 4))
+				sb.WriteByte(int2char(c<<2 | v>>4))
 				sb.WriteByte(int2char(15 & v))
 			}
 		}
@@ -104,7 +104,7 @@ func Timestamp() int {
 func SignatureOfMd5(params map[string]string) string {
 	keys := []string{}
 	for k, v := range params {
-		keys = append(keys, k + "=" + v)
+		keys = append(keys, k+"="+v)
 	}
 
 	// sort
@@ -117,8 +117,8 @@ func SignatureOfMd5(params map[string]string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// SignatureOfHmac HMAC签名
-func SignatureOfHmac(secretKey, sessionKey, operate, url, dateOfGmt string) string {
+// SignatureOfHmacV2 HMAC签名
+func SignatureOfHmacV2(secretKey, sessionKey, operate, url, dateOfGmt, param string) string {
 	requestUri := strings.Split(url, "?")[0]
 	requestUri = strings.ReplaceAll(requestUri, "https://", "")
 	requestUri = strings.ReplaceAll(requestUri, "http://", "")
@@ -128,11 +128,18 @@ func SignatureOfHmac(secretKey, sessionKey, operate, url, dateOfGmt string) stri
 	plainStr := &strings.Builder{}
 	fmt.Fprintf(plainStr, "SessionKey=%s&Operate=%s&RequestURI=%s&Date=%s",
 		sessionKey, operate, requestUri, dateOfGmt)
-
+	if param != "" {
+		plainStr.WriteString(fmt.Sprintf("&params=%s", param))
+	}
 	key := []byte(secretKey)
 	mac := hmac.New(sha1.New, key)
 	mac.Write([]byte(plainStr.String()))
 	return strings.ToUpper(hex.EncodeToString(mac.Sum(nil)))
+}
+
+// SignatureOfHmac HMAC签名
+func SignatureOfHmac(secretKey, sessionKey, operate, url, dateOfGmt string) string {
+	return SignatureOfHmacV2(secretKey, sessionKey, operate, url, dateOfGmt, "")
 }
 
 func Rand() string {
